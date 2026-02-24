@@ -1,0 +1,147 @@
+name: Ritual Monitor
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 需要完整历史计算时间
+
+      - name: Set timezone to Asia/Shanghai
+        run: |
+          sudo timedatectl set-timezone Asia/Shanghai
+          echo "TZ=Asia/Shanghai" >> $GITHUB_ENV
+
+      - name: Generate Status
+        run: |
+          mkdir -p _site
+          
+          # 使用 Python 生成状态 JSON
+          python3 << 'PYTHON'
+          import os
+          import json
+          import subprocess
+          import re
+          from datetime import datetime, timezone, timedelta
+
+          # 设置东八区时区 (UTC+8)
+          tz = timezone(timedelta(hours=8))
+
+          # 动态扫描 start 目录中的 md 文件
+          def get_md_files():
+              md_files = []
+              if os.path.exists('start'):
+                  for f in sorted(os.listdir('start')):
+                      if f.endswith('.md'):
+                          # 提取文件名中的数字部分作为节点ID
+                          match = re.match(r'(\d+)\.md', f)
+                          if match:
+                              md_files.append((match.group(1), f"start/{f}"))
+              return md_files
+
+          md_files = get_md_files()
+          total_nodes = len(md_files)
+
+          if total_nodes == 0:
+              print("Warning: No md files found in start/ directory")
+              total_nodes = 0
+
+          # 扫描当前文件状态
+          nodes = {}
+          first_time = None
+          last_time = None
+
+          for node_id, filepath in md_files:
+              if os.path.exists(filepath):
+                  with open(filepath, 'r') as f:
+                      content = f.read().strip()
+                  
+                  # 获取该文件的最后修改信息
+                  try:
+                      log = subprocess.check_output(
+                          ['git', 'log', '-1', '--format=%at|%an', '--', filepath],
+                          text=True
+                      ).strip()
+                      
+                      if log and content != "WAITING" and content != "":
+                          timestamp, author = log.split('|')
+                          ts = int(timestamp)
+                          # 使用东八区时间
+                          dt = datetime.fromtimestamp(ts, tz)
+                          time_str = dt.strftime('%H:%M:%S')
+                          
+                          if not first_time or ts < first_time:
+                              first_time = ts
+                          if not last_time or ts > last_time:
+                              last_time = ts
+                          
+                          nodes[node_id] = {
+                              "status": "ONLINE",
+                              "author": author,
+                              "content": content,
+                              "timestamp": ts,
+                              "time_str": time_str
+                          }
+                      else:
+                          nodes[node_id] = {"status": "WAITING"}
+                  except Exception as e:
+                      nodes[node_id] = {"status": "WAITING"}
+              else:
+                  nodes[node_id] = {"status": "MISSING"}
+
+          # 计算耗时
+          duration = last_time - first_time if (first_time and last_time) else 0
+
+          # 使用东八区时间格式化
+          status = {
+              "total": total_nodes,
+              "online": sum(1 for n in nodes.values() if n.get("status") == "ONLINE"),
+              "nodes": nodes,
+              "first_commit": datetime.fromtimestamp(first_time, tz).strftime('%Y-%m-%d %H:%M:%S') if first_time else None,
+              "last_commit": datetime.fromtimestamp(last_time, tz).strftime('%Y-%m-%d %H:%M:%S') if last_time else None,
+              "duration_seconds": duration,
+              "generated_at": datetime.now(tz).strftime('%Y-%m-%d %H:%M:%S')
+          }
+
+          with open('_site/status.json', 'w') as f:
+              json.dump(status, f, indent=2)
+          
+          print(f"Status: {status['online']}/{total_nodes} online, Duration: {duration}s")
+          PYTHON
+
+      - name: Copy frontend files
+        run: |
+          cp docs/*.html _site/
+          cp -r start _site/ 2>/dev/null || true
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

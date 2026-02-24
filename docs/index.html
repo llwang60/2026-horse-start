@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 Horse Power - System Boot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0d1117;
+            color: #00ff41;
+            font-family: 'Courier New', 'Consolas', monospace;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0;
+            transition: opacity 2s;
+        }
+        
+        #matrix-canvas.active {
+            opacity: 0.3;
+        }
+        
+        .container {
+            position: relative;
+            z-index: 10;
+            padding: 40px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #00ff41;
+            padding-bottom: 20px;
+        }
+        
+        .title {
+            font-size: 2.5em;
+            font-weight: bold;
+            text-shadow: 0 0 20px #00ff41;
+            margin-bottom: 10px;
+            letter-spacing: 3px;
+        }
+        
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.8;
+        }
+        
+        .switch-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: transparent;
+            border: 1px solid #00ff41;
+            color: #00ff41;
+            padding: 8px 15px;
+            font-family: inherit;
+            font-size: 0.85em;
+            cursor: pointer;
+            text-decoration: none;
+            opacity: 0.7;
+            transition: all 0.3s;
+        }
+        
+        .switch-btn:hover {
+            opacity: 1;
+            background: rgba(0, 255, 65, 0.1);
+            box-shadow: 0 0 10px #00ff41;
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+            background: rgba(0, 255, 65, 0.1);
+            padding: 15px;
+            border: 1px solid #00ff41;
+        }
+        
+        .blink {
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .nodes-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            flex: 1;
+            margin-bottom: 20px;
+        }
+        
+        .node {
+            border: 2px solid #333;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s;
+            background: rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .node::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0,255,65,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .node.processing::before {
+            left: 100%;
+        }
+        
+        .node.offline {
+            border-color: #333;
+            color: #555;
+        }
+        
+        .node.online {
+            border-color: #00ff41;
+            color: #00ff41;
+            box-shadow: 0 0 15px rgba(0,255,65,0.3);
+            background: rgba(0,255,65,0.1);
+        }
+        
+        .node-id {
+            font-size: 0.9em;
+            margin-bottom: 5px;
+            opacity: 0.7;
+        }
+        
+        .node-status {
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        
+        .node-author {
+            font-size: 0.75em;
+            margin-top: 5px;
+            word-break: break-all;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            border: 2px solid #00ff41;
+            margin-bottom: 20px;
+            position: relative;
+            background: rgba(0,0,0,0.5);
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff41, #00cc33);
+            width: 0%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #000;
+        }
+        
+        .ascii-horse {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 100;
+            text-align: center;
+            background: rgba(13, 17, 23, 0.95);
+            padding: 40px;
+            border: 3px solid #00ff41;
+            box-shadow: 0 0 50px rgba(0,255,65,0.5);
+        }
+        
+        .ascii-horse.show {
+            display: block;
+            animation: horseAppear 0.5s ease;
+        }
+        
+        @keyframes horseAppear {
+            from { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+            to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        
+        .ascii-art {
+            font-size: 14px;
+            line-height: 1.2;
+            white-space: pre;
+            margin: 20px 0;
+            color: #00ff41;
+        }
+        
+        .final-message {
+            font-size: 1.5em;
+            margin-top: 20px;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+        }
+        
+        .download-btn {
+            margin-top: 20px;
+            padding: 10px 30px;
+            background: #00ff41;
+            color: #0d1117;
+            border: none;
+            font-family: inherit;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        
+        .download-btn:hover {
+            background: #00cc33;
+            box-shadow: 0 0 20px #00ff41;
+        }
+        
+        .log-terminal {
+            height: 100px;
+            overflow-y: auto;
+            border: 1px solid #333;
+            padding: 10px;
+            font-size: 0.85em;
+            color: #888;
+            background: rgba(0,0,0,0.3);
+        }
+        
+        .log-entry {
+            margin-bottom: 3px;
+        }
+        
+        .timestamp {
+            color: #555;
+        }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <canvas id="matrix-canvas"></canvas>
+    
+    <div class="container">
+        <a href="festive.html" class="switch-btn">🏮 切换喜庆版</a>
+        <div class="header">
+            <div class="title">2026 HORSE POWER</div>
+            <div class="subtitle">DISTRIBUTED SYSTEM BOOT SEQUENCE</div>
+        </div>
+        
+        <div class="status-bar">
+            <div>SYSTEM: <span class="blink">STANDBY</span></div>
+            <div>NODES: <span id="online-count">0</span>/<span id="total-count">--</span> ONLINE</div>
+            <div>LATENCY: <span id="latency">--</span>ms</div>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress">0%</div>
+        </div>
+        
+        <div class="nodes-grid" id="nodes-grid">
+            <!-- 由JS生成 -->
+        </div>
+        
+        <div class="log-terminal" id="log">
+            <div class="log-entry"><span class="timestamp">[SYSTEM]</span> Initializing boot sequence...</div>
+        </div>
+    </div>
+    
+    <div class="ascii-horse" id="final-screen">
+        <div class="ascii-art" id="horse-art"></div>
+        <div class="final-message">ALL SYSTEMS OPERATIONAL</div>
+        <div id="stats" style="margin-top: 15px; font-size: 0.9em; color: #888;"></div>
+        <button class="download-btn" onclick="downloadCertificate()">Download Certificate</button>
+    </div>
+
+    <script>
+        // 配置
+        const POLL_INTERVAL = 3000;
+        let isCompleted = false;
+        let statusData = null;
+        let startTime = Date.now();
+        let TOTAL_NODES = 0; // 动态从 status.json 获取
+
+        // 几何线条马（ASCII Art）
+        const HORSE_ASCII = `
+    \\ ⟁
+     \\  / \\
+      \\/  ▲  \\
+      /\\ / \\ /
+     /  ▲   ▲
+    /  / \\ / \\
+   ◊  /  ◊   ◊  \\
+   
+   2026 HORSE POWER
+        `;
+
+        // 初始化节点网格（动态根据节点ID列表）
+        function initGrid(nodeIds) {
+            const grid = document.getElementById('nodes-grid');
+            grid.innerHTML = ''; // 清空现有内容
+            
+            nodeIds.forEach(nodeId => {
+                const node = document.createElement('div');
+                node.className = 'node offline';
+                node.id = `node-${nodeId}`;
+                node.innerHTML = `
+                    <div class="node-id">NODE ${nodeId}</div>
+                    <div class="node-status">OFFLINE</div>
+                    <div class="node-author"></div>
+                `;
+                grid.appendChild(node);
+            });
+            
+            TOTAL_NODES = nodeIds.length;
+            addLog(`System initialized with ${TOTAL_NODES} nodes`);
+        }
+
+        // 添加日志
+        function addLog(message) {
+            const log = document.getElementById('log');
+            const time = new Date().toLocaleTimeString('zh-CN', {hour12: false});
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span class="timestamp">[${time}]</span> ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // 获取状态
+        async function fetchStatus() {
+            try {
+                const start = Date.now();
+                // 添加随机参数防止缓存
+                const response = await fetch(`./status.json?t=${Date.now()}`);
+                const data = await response.json();
+                const latency = Date.now() - start;
+                document.getElementById('latency').textContent = latency;
+                
+                // 如果是第一次获取，初始化网格
+                if (TOTAL_NODES === 0 && data.nodes) {
+                    const nodeIds = Object.keys(data.nodes).sort();
+                    initGrid(nodeIds);
+                }
+                
+                updateUI(data);
+                
+                if (TOTAL_NODES > 0 && data.online >= TOTAL_NODES && !isCompleted) {
+                    triggerCompletion(data);
+                }
+            } catch (err) {
+                addLog(`Error: ${err.message}`);
+            }
+        }
+
+        // 更新UI
+        function updateUI(data) {
+            statusData = data;
+            document.getElementById('online-count').textContent = data.online;
+            
+            // 更新总数显示
+            const totalNodes = data.total || TOTAL_NODES;
+            if (totalNodes > 0) {
+                document.getElementById('total-count').textContent = totalNodes;
+                const progress = (data.online / totalNodes) * 100;
+                document.getElementById('progress').style.width = `${progress}%`;
+                document.getElementById('progress').textContent = `${Math.round(progress)}%`;
+            }
+            
+            // 更新所有节点状态
+            Object.keys(data.nodes || {}).forEach(nodeId => {
+                const nodeData = data.nodes[nodeId];
+                const element = document.getElementById(`node-${nodeId}`);
+                
+                if (element && nodeData && nodeData.status === 'ONLINE') {
+                    if (!element.classList.contains('online')) {
+                        element.classList.remove('offline');
+                        element.classList.add('online', 'processing');
+                        element.querySelector('.node-status').textContent = 'ONLINE';
+                        element.querySelector('.node-author').textContent = nodeData.author;
+                        addLog(`Node ${nodeId} connected: ${nodeData.author}`);
+                        setTimeout(() => element.classList.remove('processing'), 500);
+                    }
+                }
+            });
+        }
+
+        // 触发完成动画
+        function triggerCompletion(data) {
+            isCompleted = true;
+            addLog('SYSTEM CONSENSUS REACHED');
+            addLog('Initializing final sequence...');
+            
+            // 显示 Matrix 背景
+            document.getElementById('matrix-canvas').classList.add('active');
+            startMatrixRain();
+            
+            // 逐字显示 ASCII 马
+            const horseEl = document.getElementById('horse-art');
+            horseEl.textContent = '';
+            document.getElementById('final-screen').classList.add('show');
+            
+            let charIndex = 0;
+            const typeInterval = setInterval(() => {
+                if (charIndex < HORSE_ASCII.length) {
+                    horseEl.textContent += HORSE_ASCII[charIndex];
+                    charIndex++;
+                } else {
+                    clearInterval(typeInterval);
+                }
+            }, 30);
+            
+            // 显示统计
+            const duration = data.duration_seconds || 0;
+            const stats = document.getElementById('stats');
+            stats.innerHTML = `
+                CONSENSUS TIME: ${duration}s<br>
+                FIRST NODE: ${data.first_commit || '--'}<br>
+                FINAL NODE: ${data.last_commit || '--'}<br>
+                TOTAL CONTRIBUTORS: ${data.online}
+            `;
+            
+            addLog('System operational. Ceremony complete.');
+        }
+
+        // Matrix 代码雨
+        function startMatrixRain() {
+            const canvas = document.getElementById('matrix-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            const chars = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
+            const fontSize = 14;
+            const columns = canvas.width / fontSize;
+            const drops = [];
+            
+            for (let i = 0; i < columns; i++) {
+                drops[i] = Math.random() * -100;
+            }
+            
+            function draw() {
+                if (!isCompleted) return;
+                
+                ctx.fillStyle = 'rgba(13, 17, 23, 0.05)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = '#00ff41';
+                ctx.font = fontSize + 'px monospace';
+                
+                for (let i = 0; i < drops.length; i++) {
+                    const text = chars[Math.floor(Math.random() * chars.length)];
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                    
+                    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                        drops[i] = 0;
+                    }
+                    drops[i]++;
+                }
+                
+                requestAnimationFrame(draw);
+            }
+            
+            draw();
+        }
+
+        // 生成纪念卡并下载
+        function downloadCertificate() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1200;
+            canvas.height = 800;
+            const ctx = canvas.getContext('2d');
+            
+            // 背景
+            const gradient = ctx.createLinearGradient(0, 0, 1200, 800);
+            gradient.addColorStop(0, '#0d1117');
+            gradient.addColorStop(1, '#161b22');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 1200, 800);
+            
+            // 边框
+            ctx.strokeStyle = '#00ff41';
+            ctx.lineWidth = 5;
+            ctx.strokeRect(50, 50, 1100, 700);
+            
+            // 标题
+            ctx.fillStyle = '#00ff41';
+            ctx.font = 'bold 60px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText('2026 HORSE POWER', 600, 150);
+            
+            // 副标题
+            ctx.font = '30px Courier New';
+            ctx.fillText('SYSTEM BOOT CERTIFICATE', 600, 200);
+            
+            // 几何马
+            ctx.font = '20px Courier New';
+            ctx.textAlign = 'left';
+            const lines = HORSE_ASCII.split('\n');
+            let y = 300;
+            lines.forEach(line => {
+                ctx.fillText(line, 400, y);
+                y += 25;
+            });
+            
+            // 统计数据
+            if (statusData) {
+                ctx.font = '24px Courier New';
+                ctx.fillText(`CONSENSUS REACHED: ${statusData.first_commit}`, 100, 550);
+                ctx.fillText(`COMPLETION TIME: ${statusData.last_commit}`, 100, 590);
+                ctx.fillText(`TOTAL DURATION: ${statusData.duration_seconds}s`, 100, 630);
+                ctx.fillText(`NODES ONLINE: ${statusData.online}/${statusData.total || TOTAL_NODES}`, 100, 670);
+            }
+            
+            // 底部
+            ctx.textAlign = 'center';
+            ctx.font = 'italic 20px Courier New';
+            ctx.fillText('Distributed System Initialization Complete', 600, 750);
+            
+            // 下载
+            const link = document.createElement('a');
+            link.download = `2026-Horse-Power-Certificate-${Date.now()}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+            
+            addLog('Certificate downloaded');
+        }
+
+        // 初始化 - 先获取状态，再动态创建网格
+        fetchStatus();
+        setInterval(fetchStatus, POLL_INTERVAL);
+        addLog('Monitoring system initializing...');
+        addLog('Waiting for node configuration...');
+    </script>
+</body>
+</html>

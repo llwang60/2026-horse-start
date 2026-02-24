@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 马到成功 - 开工大吉</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #8B0000 0%, #DC143C 50%, #8B0000 100%);
+            color: #FFD700;
+            font-family: 'Noto Serif SC', 'SimSun', 'STSong', serif;
+            overflow: hidden;
+            height: 100vh;
+            position: relative;
+        }
+        
+        /* 祥云背景 */
+        .clouds {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.15;
+        }
+        
+        .cloud {
+            position: absolute;
+            font-size: 120px;
+            animation: float 20s infinite ease-in-out;
+        }
+        
+        .cloud:nth-child(1) { top: 10%; left: -10%; animation-delay: 0s; }
+        .cloud:nth-child(2) { top: 30%; right: -5%; animation-delay: 5s; }
+        .cloud:nth-child(3) { top: 60%; left: 5%; animation-delay: 10s; }
+        .cloud:nth-child(4) { bottom: 20%; right: 10%; animation-delay: 15s; }
+        
+        @keyframes float {
+            0%, 100% { transform: translateX(0) translateY(0); }
+            25% { transform: translateX(30px) translateY(-10px); }
+            50% { transform: translateX(-20px) translateY(10px); }
+            75% { transform: translateX(20px) translateY(-5px); }
+        }
+        
+        /* 飘落的花瓣/金币 */
+        #falling-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 2;
+        }
+        
+        .container {
+            position: relative;
+            z-index: 10;
+            padding: 20px 30px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+        
+        /* 顶部标题区 */
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+            position: relative;
+            flex-shrink: 0;
+        }
+        
+        .switch-btn {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: rgba(255, 215, 0, 0.2);
+            border: 2px solid #FFD700;
+            color: #FFD700;
+            padding: 8px 15px;
+            font-family: inherit;
+            font-size: 0.9em;
+            cursor: pointer;
+            text-decoration: none;
+            border-radius: 20px;
+            transition: all 0.3s;
+            z-index: 100;
+        }
+        
+        .switch-btn:hover {
+            background: rgba(255, 215, 0, 0.4);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+            transform: scale(1.05);
+        }
+        
+        .title-decoration {
+            font-size: 1.5em;
+            margin-bottom: 3px;
+        }
+        
+        .main-title {
+            font-size: 2.8em;
+            font-weight: 900;
+            text-shadow: 
+                0 0 10px #FFD700,
+                0 0 20px #FFD700,
+                0 0 30px #FF6B6B;
+            margin-bottom: 5px;
+            letter-spacing: 8px;
+        }
+        
+        .subtitle {
+            font-size: 1.2em;
+            color: #FFF;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .year-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #8B0000;
+            padding: 4px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-top: 5px;
+            font-weight: bold;
+            margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.5);
+        }
+        
+        /* 吉祥话轮播 */
+        .blessing-banner {
+            background: linear-gradient(90deg, transparent, rgba(255,215,0,0.2), transparent);
+            padding: 8px;
+            text-align: center;
+            margin-bottom: 12px;
+            border-top: 1px solid rgba(255,215,0,0.3);
+            border-bottom: 1px solid rgba(255,215,0,0.3);
+            flex-shrink: 0;
+        }
+        
+        .blessing-text {
+            font-size: 1.1em;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 0 0 5px #FFD700; }
+            to { text-shadow: 0 0 20px #FFD700, 0 0 30px #FF6B6B; }
+        }
+        
+        /* 状态栏 */
+        .status-bar {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 15px;
+            background: rgba(0,0,0,0.3);
+            padding: 12px;
+            border-radius: 15px;
+            border: 2px solid #FFD700;
+            flex-shrink: 0;
+        }
+        
+        .status-item {
+            text-align: center;
+        }
+        
+        .status-label {
+            font-size: 0.9em;
+            color: #FFA07A;
+            margin-bottom: 5px;
+        }
+        
+        .status-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #FFD700;
+        }
+        
+        .status-value.blink {
+            animation: blink-gold 1s infinite;
+        }
+        
+        @keyframes blink-gold {
+            0%, 50% { opacity: 1; text-shadow: 0 0 10px #FFD700; }
+            51%, 100% { opacity: 0.5; }
+        }
+        
+        /* 进度条 */
+        .progress-section {
+            margin-bottom: 15px;
+            flex-shrink: 0;
+        }
+        
+        .progress-label {
+            text-align: center;
+            margin-bottom: 8px;
+            font-size: 1em;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 35px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 18px;
+            overflow: hidden;
+            border: 2px solid #FFD700;
+            position: relative;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #FFD700, #FFA500, #FFD700);
+            width: 0%;
+            transition: width 0.8s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #8B0000;
+            font-size: 1.1em;
+            box-shadow: 0 0 20px rgba(255,215,0,0.5);
+        }
+        
+        /* 节点网格 */
+        .nodes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 10px;
+            flex: 1;
+            margin-bottom: 15px;
+            overflow-y: auto;
+            padding-right: 5px;
+            max-height: calc(100vh - 400px);
+        }
+        
+        /* 自定义滚动条 */
+        .nodes-grid::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .nodes-grid::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+            border-radius: 4px;
+        }
+        
+        .nodes-grid::-webkit-scrollbar-thumb {
+            background: rgba(255, 215, 0, 0.5);
+            border-radius: 4px;
+        }
+        
+        .nodes-grid::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 215, 0, 0.8);
+        }
+        
+        .node {
+            background: linear-gradient(135deg, rgba(139,0,0,0.8), rgba(178,34,34,0.8));
+            border: 3px solid #8B4513;
+            border-radius: 12px;
+            padding: 10px 6px;
+            text-align: center;
+            transition: all 0.5s ease;
+            position: relative;
+            overflow: hidden;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .node::before {
+            content: '🧧';
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 0.8em;
+            opacity: 0.3;
+        }
+        
+        .node.waiting {
+            border-color: #8B4513;
+            color: #CD853F;
+        }
+        
+        .node.online {
+            border-color: #FFD700;
+            background: linear-gradient(135deg, #228B22, #32CD32);
+            box-shadow: 
+                0 0 20px rgba(255,215,0,0.6),
+                inset 0 0 20px rgba(255,255,255,0.2);
+            animation: pulse-gold 2s infinite;
+        }
+        
+        @keyframes pulse-gold {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+        
+        .node.online::before {
+            content: '✨';
+            opacity: 1;
+            animation: sparkle 1s infinite;
+        }
+        
+        @keyframes sparkle {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+        
+        .node-id {
+            font-size: 0.85em;
+            margin-bottom: 5px;
+            opacity: 0.8;
+        }
+        
+        .node-status {
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .node-author {
+            font-size: 0.8em;
+            word-break: break-all;
+            color: #FFF;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        
+        /* 底部信息 */
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0,0,0,0.3);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,215,0,0.3);
+            flex-shrink: 0;
+            margin-top: 10px;
+        }
+        
+        .footer-left {
+            font-size: 0.85em;
+        }
+        
+        .footer-right {
+            font-size: 0.8em;
+            color: #FFA07A;
+        }
+        
+        /* 完成弹窗 */
+        .celebration-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .celebration-modal.show {
+            display: flex;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .celebration-content {
+            background: linear-gradient(135deg, #DC143C, #8B0000);
+            padding: 50px;
+            border-radius: 30px;
+            border: 5px solid #FFD700;
+            text-align: center;
+            box-shadow: 
+                0 0 50px rgba(255,215,0,0.5),
+                inset 0 0 50px rgba(255,255,255,0.1);
+            max-width: 600px;
+        }
+        
+        .celebration-emoji {
+            font-size: 5em;
+            margin-bottom: 20px;
+            animation: bounce 1s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .celebration-title {
+            font-size: 2.5em;
+            font-weight: 900;
+            color: #FFD700;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(255,215,0,0.8);
+        }
+        
+        .celebration-message {
+            font-size: 1.3em;
+            color: #FFF;
+            margin-bottom: 20px;
+            line-height: 1.8;
+        }
+        
+        .celebration-stats {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            color: #FFD700;
+        }
+        
+        .celebration-btn {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #8B0000;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            font-family: inherit;
+            box-shadow: 0 5px 20px rgba(255,215,0,0.5);
+            transition: all 0.3s;
+        }
+        
+        .celebration-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 30px rgba(255,215,0,0.7);
+        }
+        
+        /* 响应式 */
+        @media (max-width: 1200px) {
+            .nodes-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            .main-title {
+                font-size: 2.5em;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .nodes-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .main-title {
+                font-size: 2em;
+                letter-spacing: 5px;
+            }
+        }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <!-- 祥云背景 -->
+    <div class="clouds">
+        <div class="cloud">☁️</div>
+        <div class="cloud">☁️</div>
+        <div class="cloud">☁️</div>
+        <div class="cloud">☁️</div>
+    </div>
+    
+    <!-- 飘落特效 -->
+    <canvas id="falling-canvas"></canvas>
+    
+    <div class="container">
+        <a href="index.html" class="switch-btn">💻 切换极客版</a>
+        
+        <!-- 标题区 -->
+        <div class="header">
+            <div class="title-decoration">🐴 ✦ 🏮 ✦ 🐴</div>
+            <div class="main-title">开工大吉</div>
+            <div class="subtitle">二零二六 · 马到成功</div>
+            <div class="year-badge">🧧 丙午马年 🧧</div>
+        </div>
+        
+        <!-- 吉祥话 -->
+        <div class="blessing-banner">
+            <div class="blessing-text" id="blessing-text">🏮 龙马精神迎新春，开工大吉万事兴 🏮</div>
+        </div>
+        
+        <!-- 状态栏 -->
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-label">系统状态</div>
+                <div class="status-value blink" id="system-status">准备就绪</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">已报到人数</div>
+                <div class="status-value"><span id="online-count">0</span> / <span id="total-count">--</span></div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">开工进度</div>
+                <div class="status-value" id="progress-text">0%</div>
+            </div>
+        </div>
+        
+        <!-- 进度条 -->
+        <div class="progress-section">
+            <div class="progress-label">🎯 集结进度</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress">0%</div>
+            </div>
+        </div>
+        
+        <!-- 节点网格 -->
+        <div class="nodes-grid" id="nodes-grid">
+            <!-- 由JS生成 -->
+        </div>
+        
+        <!-- 底部 -->
+        <div class="footer">
+            <div class="footer-left">
+                🎊 <span id="first-commit">等待第一位勇士...</span>
+            </div>
+            <div class="footer-right">
+                实时更新 · 延迟 <span id="latency">--</span>ms
+            </div>
+        </div>
+    </div>
+    
+    <!-- 庆祝弹窗 -->
+    <div class="celebration-modal" id="celebration-modal">
+        <div class="celebration-content">
+            <div class="celebration-emoji">🎉🐴🎉</div>
+            <div class="celebration-title">开工大吉！</div>
+            <div class="celebration-message" id="celebration-message">
+                全员集结完毕<br>
+                马到成功步步高<br>
+                代码无 Bug，服务永在线！
+            </div>
+            <div class="celebration-stats" id="celebration-stats">
+                <!-- 动态填充 -->
+            </div>
+            <button class="celebration-btn" onclick="downloadCertificate()">
+                🧧 下载开工纪念卡 🧧
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 配置
+        const POLL_INTERVAL = 3000;
+        let isCompleted = false;
+        let statusData = null;
+        let TOTAL_NODES = 0; // 动态从 status.json 获取
+        let nodeIdList = []; // 存储节点ID列表
+        
+        // 吉祥话列表
+        const blessings = [
+            "🏮 龙马精神迎新春，开工大吉万事兴 🏮",
+            "🐴 一马当先创佳绩，技术团队展宏图 🐴",
+            "💰 马到功成财源进，代码零 Bug 运道通 💰",
+            "✨ 策马扬鞭新征程，齐心协力攀高峰 ✨",
+            "🧧 金戈铁马战新年，开工大吉福满天 🧧",
+            "🎊 快马加鞭追梦想，团队齐心创辉煌 🎊",
+            "🏆 万马奔腾气势宏，技术团队立新功 🏆",
+            "🌟 马年行大运，开工喜气盈 🌟"
+        ];
+        
+        // 节点吉祥话（每个节点上线时显示）- 扩展支持更多节点
+        const nodeBlessings = [
+            "一马当先", "二龙腾飞", "三羊开泰", "四季平安", 
+            "五福临门", "六六大顺", "七星高照", "八方来财",
+            "九九同心", "十全十美", "百事亨通", "千事吉祥",
+            "万事如意", "心想事成", "步步高升", "前程似锦",
+            "财运亨通", "吉祥如意", "喜气洋洋", "开工大吉",
+            "福星高照", "鸿运当头", "财源广进", "事业有成",
+            "身体健康", "阖家幸福", "万事如意", "心想事成",
+            "步步高升", "前程似锦", "财运亨通", "吉祥如意"
+        ];
+        
+        // 轮播吉祥话
+        let blessingIndex = 0;
+        setInterval(() => {
+            blessingIndex = (blessingIndex + 1) % blessings.length;
+            document.getElementById('blessing-text').textContent = blessings[blessingIndex];
+        }, 5000);
+        
+        // 初始化节点网格（动态根据节点ID列表）
+        function initGrid(nodeIds) {
+            const grid = document.getElementById('nodes-grid');
+            grid.innerHTML = ''; // 清空现有内容
+            
+            nodeIds.forEach((nodeId, index) => {
+                const node = document.createElement('div');
+                node.className = 'node waiting';
+                node.id = `node-${nodeId}`;
+                node.innerHTML = `
+                    <div class="node-id">第 ${index + 1} 位</div>
+                    <div class="node-status">🧧 待报到</div>
+                    <div class="node-author">-</div>
+                `;
+                grid.appendChild(node);
+            });
+            
+            TOTAL_NODES = nodeIds.length;
+            console.log(`系统初始化完成，共 ${TOTAL_NODES} 个节点`);
+        }
+        
+        // 获取状态
+        async function fetchStatus() {
+            try {
+                const start = Date.now();
+                const response = await fetch(`./status.json?t=${Date.now()}`);
+                const data = await response.json();
+                const latency = Date.now() - start;
+                document.getElementById('latency').textContent = latency;
+                
+                // 如果是第一次获取，初始化网格
+                if (TOTAL_NODES === 0 && data.nodes) {
+                    nodeIdList = Object.keys(data.nodes).sort();
+                    initGrid(nodeIdList);
+                }
+                
+                updateUI(data);
+                
+                if (TOTAL_NODES > 0 && data.online >= TOTAL_NODES && !isCompleted) {
+                    triggerCelebration(data);
+                }
+            } catch (err) {
+                console.log('获取状态失败:', err.message);
+            }
+        }
+        
+        // 更新UI
+        function updateUI(data) {
+            statusData = data;
+            
+            // 更新总数显示
+            const totalNodes = data.total || TOTAL_NODES;
+            if (totalNodes > 0) {
+                document.getElementById('total-count').textContent = totalNodes;
+            }
+            
+            // 更新人数
+            document.getElementById('online-count').textContent = data.online;
+            
+            // 更新进度
+            if (totalNodes > 0) {
+                const progress = Math.round((data.online / totalNodes) * 100);
+                document.getElementById('progress').style.width = `${progress}%`;
+                document.getElementById('progress').textContent = `${progress}%`;
+                document.getElementById('progress-text').textContent = `${progress}%`;
+            }
+            
+            // 更新系统状态文字
+            const statusEl = document.getElementById('system-status');
+            if (data.online === 0) {
+                statusEl.textContent = '准备就绪';
+            } else if (data.online < totalNodes) {
+                statusEl.textContent = '集结中...';
+            } else {
+                statusEl.textContent = '开工大吉！';
+            }
+            
+            // 更新第一个报到者
+            if (data.first_commit) {
+                document.getElementById('first-commit').textContent = 
+                    `首位报到：${data.first_commit.split(' ')[1]}`;
+            }
+            
+            // 更新节点状态
+            Object.keys(data.nodes || {}).forEach((nodeId, index) => {
+                const nodeData = data.nodes[nodeId];
+                const element = document.getElementById(`node-${nodeId}`);
+                
+                if (element && nodeData && nodeData.status === 'ONLINE') {
+                    if (!element.classList.contains('online')) {
+                        element.classList.remove('waiting');
+                        element.classList.add('online');
+                        element.querySelector('.node-status').textContent = 
+                            `✅ ${nodeBlessings[index] || '开工大吉'}`;
+                        element.querySelector('.node-author').textContent = 
+                            nodeData.author;
+                    }
+                }
+            });
+        }
+        
+        // 触发庆祝
+        function triggerCelebration(data) {
+            isCompleted = true;
+            
+            // 开始飘落特效
+            startFallingEffect();
+            
+            // 显示弹窗
+            setTimeout(() => {
+                const modal = document.getElementById('celebration-modal');
+                modal.classList.add('show');
+                
+                // 更新消息内容
+                const total = data.total || TOTAL_NODES;
+                document.getElementById('celebration-message').innerHTML = `
+                    ${total}位勇士齐报到<br>
+                    马到成功步步高<br>
+                    代码无 Bug，服务永在线！
+                `;
+                
+                // 填充统计
+                const duration = data.duration_seconds || 0;
+                const minutes = Math.floor(duration / 60);
+                const seconds = duration % 60;
+                document.getElementById('celebration-stats').innerHTML = `
+                    <div>🕐 集结用时：${minutes}分${seconds}秒</div>
+                    <div>👥 报到人数：${data.online}人</div>
+                    <div>🎊 开工时间：${data.last_commit || '--'}</div>
+                `;
+            }, 1000);
+        }
+        
+        // 飘落特效（金币/红包）
+        function startFallingEffect() {
+            const canvas = document.getElementById('falling-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            const items = ['🧧', '💰', '✨', '🎊', '🏮', '🐴'];
+            const particles = [];
+            
+            for (let i = 0; i < 50; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * -canvas.height,
+                    item: items[Math.floor(Math.random() * items.length)],
+                    speed: 2 + Math.random() * 3,
+                    rotation: Math.random() * 360,
+                    rotationSpeed: (Math.random() - 0.5) * 4
+                });
+            }
+            
+            function draw() {
+                if (!isCompleted) return;
+                
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.font = '30px Arial';
+                
+                particles.forEach(p => {
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rotation * Math.PI / 180);
+                    ctx.fillText(p.item, -15, 15);
+                    ctx.restore();
+                    
+                    p.y += p.speed;
+                    p.rotation += p.rotationSpeed;
+                    
+                    if (p.y > canvas.height + 50) {
+                        p.y = -50;
+                        p.x = Math.random() * canvas.width;
+                    }
+                });
+                
+                requestAnimationFrame(draw);
+            }
+            
+            draw();
+        }
+        
+        // 生成纪念卡
+        function downloadCertificate() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1200;
+            canvas.height = 800;
+            const ctx = canvas.getContext('2d');
+            
+            // 喜庆背景
+            const gradient = ctx.createLinearGradient(0, 0, 1200, 800);
+            gradient.addColorStop(0, '#8B0000');
+            gradient.addColorStop(0.5, '#DC143C');
+            gradient.addColorStop(1, '#8B0000');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 1200, 800);
+            
+            // 金色边框
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 8;
+            ctx.strokeRect(40, 40, 1120, 720);
+            
+            // 内边框
+            ctx.lineWidth = 3;
+            ctx.strokeRect(60, 60, 1080, 680);
+            
+            // 标题
+            ctx.fillStyle = '#FFD700';
+            ctx.font = 'bold 80px "Noto Serif SC", serif';
+            ctx.textAlign = 'center';
+            ctx.shadowColor = '#FFD700';
+            ctx.shadowBlur = 20;
+            ctx.fillText('开工大吉', 600, 150);
+            ctx.shadowBlur = 0;
+            
+            // 副标题
+            ctx.font = '40px "Noto Serif SC", serif';
+            ctx.fillText('二零二六 · 马到成功', 600, 210);
+            
+            // 装饰线
+            ctx.beginPath();
+            ctx.moveTo(300, 240);
+            ctx.lineTo(900, 240);
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // 马图案
+            ctx.font = '100px Arial';
+            ctx.fillText('🐴', 600, 360);
+            
+            // 吉祥话
+            ctx.font = 'italic 30px "Noto Serif SC", serif';
+            ctx.fillStyle = '#FFF';
+            ctx.fillText('龙马精神迎新春，开工大吉万事兴', 600, 430);
+            
+            // 统计信息
+            if (statusData) {
+                ctx.fillStyle = '#FFD700';
+                ctx.font = '28px "Noto Serif SC", serif';
+                const duration = statusData.duration_seconds || 0;
+                const minutes = Math.floor(duration / 60);
+                const seconds = duration % 60;
+                
+                ctx.fillText(`集结用时：${minutes}分${seconds}秒`, 600, 520);
+                ctx.fillText(`报到人数：${statusData.online}人`, 600, 560);
+                ctx.fillText(`开工时间：${statusData.last_commit || '--'}`, 600, 600);
+            }
+            
+            // 底部装饰
+            ctx.font = '60px Arial';
+            ctx.fillText('🧧 🏮 🎊 🏮 🧧', 600, 680);
+            
+            // 落款
+            ctx.fillStyle = '#FFA07A';
+            ctx.font = '24px "Noto Serif SC", serif';
+            ctx.fillText('2026 技术团队开工纪念', 600, 740);
+            
+            // 下载
+            const link = document.createElement('a');
+            link.download = `2026-开工大吉-纪念卡-${Date.now()}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
+        // 初始化 - 先获取状态，再动态创建网格
+        fetchStatus();
+        setInterval(fetchStatus, POLL_INTERVAL);
+    </script>
+</body>
+</html>
